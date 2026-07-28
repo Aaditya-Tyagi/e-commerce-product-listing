@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import {
   FlatList,
   ListRenderItemInfo,
@@ -6,12 +6,13 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useProducts } from '../hooks/useproductData'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import type { Product } from '../types/productResponse'
 import { ProductCard, CARD_HEIGHT, CARD_GAP } from '../components/ProductCard'
+import { SearchBar } from '../components/SearchBar'
 import {
   EmptyState,
   ErrorState,
@@ -20,20 +21,29 @@ import {
 } from '../components/ListStates'
 import { colors, spacing } from '../theme'
 
-
-const ListHeaderComponent = ({ productsLength, total }: { productsLength: number, total: number }) => (
-  <View style={styles.headerContainer}><View style={styles.headerTitleContainer}>
+const ScreenHeader = ({
+  productsLength,
+  total,
+}: {
+  productsLength: number
+  total: number
+}) => (
+  <View style={styles.headerTitleContainer}>
     <Text style={styles.headerTitle}>Products</Text>
     {total > 0 && (
       <Text style={styles.headerCount}>
         {productsLength} of {total}
       </Text>
     )}
-    <TextInput />
-  </View><TextInput /></View>
+  </View>
 )
+
 export default function ProductListScreen() {
   const insets = useSafeAreaInsets()
+
+  const [searchText, setSearchText] = useState('')
+  const debouncedSearch = useDebouncedValue(searchText, 400)
+
   const {
     products,
     total,
@@ -43,9 +53,10 @@ export default function ProductListScreen() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refresh,
     refetch,
     isRefetching,
-  } = useProducts()
+  } = useProducts(debouncedSearch)
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<Product>) => <ProductCard product={item} />,
@@ -70,41 +81,42 @@ export default function ProductListScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  if (isLoading) {
-    return <InitialLoader />
-  }
-
-  if (isError && products.length === 0) {
-    return <ErrorState message={error?.message} onRetry={() => refetch()} />
-  }
-
+  // header and search stay mounted while the body below switches state,
+  // otherwise the input unmounts (and drops the keyboard) on every new search
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScreenHeader productsLength={products.length} total={total} />
+      <SearchBar value={searchText} onChangeText={setSearchText} />
 
-      <FlatList
-        data={products}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        getItemLayout={getItemLayout}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={colors.accent}
-          />
-        }
-        removeClippedSubviews={true}
-
-        ListHeaderComponent={<ListHeaderComponent productsLength={products.length} total={total} />}
-        ListFooterComponent={isFetchingNextPage ? <ListFooterLoader /> : null}
-        ListEmptyComponent={<EmptyState />}
-        contentContainerStyle={
-          products.length === 0 ? styles.emptyContent : styles.listContent
-        }
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading ? (
+        <InitialLoader />
+      ) : isError && products.length === 0 ? (
+        <ErrorState message={error?.message} onRetry={() => refetch()} />
+      ) : (
+        <FlatList
+          data={products}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          getItemLayout={getItemLayout}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refresh}
+              tintColor={colors.accent}
+            />
+          }
+          removeClippedSubviews={true}
+          ListFooterComponent={isFetchingNextPage ? <ListFooterLoader /> : null}
+          ListEmptyComponent={<EmptyState />}
+          contentContainerStyle={
+            products.length === 0 ? styles.emptyContent : styles.listContent
+          }
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   )
 }
@@ -113,8 +125,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  headerContainer: {
   },
   headerTitleContainer: {
     width: '100%',
@@ -131,7 +141,7 @@ const styles = StyleSheet.create({
   },
   headerCount: {
     fontSize: 13,
-    color: colors.textSecondary
+    color: colors.textSecondary,
   },
   listContent: {
     paddingBottom: spacing.xl,
