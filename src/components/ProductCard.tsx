@@ -4,7 +4,6 @@ import type { Product } from '../types/productResponse'
 import { colors, radius, spacing } from '../theme'
 import { formatPrice, originalPrice } from '../utils/format'
 
-/** The card only needs a slice of Product — narrow props keep memo comparisons cheap. */
 export type ProductCardData = Pick<
   Product,
   'id' | 'title' | 'brand' | 'price' | 'discountPercentage' | 'rating' | 'thumbnail'
@@ -64,7 +63,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    // subtle elevation, cheap to composite
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -144,5 +142,4 @@ const styles = StyleSheet.create({
   },
 })
 
-/** Memoized: rows re-render only when their own product reference changes. */
 export const ProductCard = memo(ProductCardBase)

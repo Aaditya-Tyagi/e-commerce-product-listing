@@ -8,9 +8,7 @@ export type SortOrder = 'asc' | 'desc';
 
 export interface GetProductsParams {
   limit?: number;
-  /** dummyjson's pagination cursor — its API calls this `skip`. */
   skip?: number;
-  /** When set, hits /products/search?q=… instead of /products. */
   searchString?: string;
   sortBy?: SortField;
   order?: SortOrder;
@@ -35,7 +33,7 @@ export const getProducts = async ({
     },
   });
 
-  // Defend against malformed payloads — the app must never crash on the API.
+  // bail early if the response shape is off
   if (!Array.isArray(response.data?.products)) {
     throw { message: 'Unexpected response from server.' };
   }

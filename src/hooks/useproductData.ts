@@ -2,9 +2,6 @@ import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query'
 import { getProducts, PAGE_SIZE } from '../api/products'
 import type { ProductsResponse } from '../types/productResponse'
 
-// Single source of truth for this query — shared by the hook and any boot-time
-// prefetch, so both hit the same cache entry. `infiniteQueryOptions` keeps the
-// whole object correctly typed (pageParam, ApiError, page shape) end to end.
 export const productsInfiniteQueryOptions = infiniteQueryOptions({
   queryKey: ['products'] as const,
   queryFn: ({ pageParam }) =>
@@ -25,7 +22,7 @@ export function useProducts() {
     products,
     total: query.data?.pages[0]?.total ?? 0,
 
-    isLoading: query.isLoading, // initial load (no cached data yet)
+    isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
 

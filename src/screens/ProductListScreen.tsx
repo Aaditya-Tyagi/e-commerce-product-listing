@@ -47,13 +47,12 @@ export default function ProductListScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Initial load — nothing cached yet.
   if (isLoading) {
     return <InitialLoader />
   }
 
-  // Hard failure with nothing to show — full-screen error with retry.
-  // (If some pages already loaded, we keep showing them instead.)
+  // full-screen error only when there's nothing to show; a failed
+  // page-3 fetch shouldn't wipe an already visible list
   if (isError && products.length === 0) {
     return <ErrorState message={error?.message} onRetry={() => refetch()} />
   }

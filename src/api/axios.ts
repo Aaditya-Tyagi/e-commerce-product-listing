@@ -13,12 +13,11 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 const toApiError = (error: unknown): ApiError => {
-  // Keep the raw error for developers — Sentry/console — before normalizing.
   if (__DEV__) console.warn('[api]', error);
 
   if (axios.isAxiosError(error)) {
     if (error.response) {
-      // Server replied with non-2xx — surface ITS message if it sent one.
+      // prefer the server's own message when it sends one
       const serverMessage = (error.response.data as { message?: string })
         ?.message;
       return {
@@ -40,5 +39,4 @@ axiosInstance.interceptors.response.use(
   error => Promise.reject(toApiError(error)),
 );
 
-// Response interceptor
 export default axiosInstance;
