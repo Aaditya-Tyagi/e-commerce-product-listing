@@ -4,13 +4,12 @@ import type { Product } from '../types/productResponse'
 import { colors, radius, spacing } from '../theme'
 import { formatPrice, originalPrice } from '../utils/format'
 
-export type ProductCardData = Pick<
-  Product,
-  'id' | 'title' | 'brand' | 'price' | 'discountPercentage' | 'rating' | 'thumbnail'
->
+// fixed card height so the list can use getItemLayout
+export const CARD_HEIGHT = 140
+export const CARD_GAP = spacing.md
 
 interface ProductCardProps {
-  product: ProductCardData
+  product: Product
 }
 
 function ProductCardBase({ product }: ProductCardProps) {
@@ -18,7 +17,7 @@ function ProductCardBase({ product }: ProductCardProps) {
   const hasDiscount = discountPercentage > 0
 
   return (
-    <View style={styles.card} accessibilityRole="summary" accessibilityLabel={title}>
+    <View style={styles.card}>
       <View style={styles.imageTile}>
         <Image source={{ uri: thumbnail }} style={styles.image} resizeMode="contain" />
       </View>
@@ -46,7 +45,7 @@ function ProductCardBase({ product }: ProductCardProps) {
         </View>
 
         <View style={styles.ratingChip}>
-          <Text style={styles.ratingText}>★ {rating.toFixed(1)}</Text>
+          <Text style={styles.ratingText}>★ {(rating ?? 0).toFixed(1)}</Text>
         </View>
       </View>
     </View>
@@ -55,12 +54,14 @@ function ProductCardBase({ product }: ProductCardProps) {
 
 const styles = StyleSheet.create({
   card: {
+    height: CARD_HEIGHT,
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: CARD_GAP,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     shadowColor: '#000',
@@ -85,7 +86,6 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
     marginLeft: spacing.md,
-    justifyContent: 'space-between',
   },
   title: {
     fontSize: 15,

@@ -1,20 +1,21 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { getProducts, PAGE_SIZE } from '../api/products'
-import type { ProductsResponse } from '../types/productResponse'
-
-export const productsInfiniteQueryOptions = infiniteQueryOptions({
-  queryKey: ['products'] as const,
-  queryFn: ({ pageParam }) =>
-    getProducts({ limit: PAGE_SIZE, skip: pageParam }),
-  initialPageParam: 0,
-  getNextPageParam: (lastPage: ProductsResponse) => {
-    const nextSkip = lastPage.skip + lastPage.limit
-    return nextSkip < lastPage.total ? nextSkip : undefined
-  },
-})
 
 export function useProducts() {
-  const query = useInfiniteQuery(productsInfiniteQueryOptions)
+  const query = useInfiniteQuery({
+    queryKey: ['products'],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => getProducts({ limit: PAGE_SIZE, skip: pageParam }),
+    // skip for the next page is simply how many items we already have,
+    // and once we have everything there is no next page
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (count, page) => count + page.products.length,
+        0,
+      )
+      return loadedCount < lastPage.total ? loadedCount : undefined
+    },
+  })
 
   const products = query.data?.pages.flatMap(page => page.products) ?? []
 

@@ -6,11 +6,12 @@ import {
   StyleSheet,
   Text,
   View,
+  TextInput
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useProducts } from '../hooks/useproductData'
 import type { Product } from '../types/productResponse'
-import { ProductCard } from '../components/ProductCard'
+import { ProductCard, CARD_HEIGHT, CARD_GAP } from '../components/ProductCard'
 import {
   EmptyState,
   ErrorState,
@@ -19,6 +20,18 @@ import {
 } from '../components/ListStates'
 import { colors, spacing } from '../theme'
 
+
+const ListHeaderComponent = ({ productsLength, total }: { productsLength: number, total: number }) => (
+  <View style={styles.headerContainer}><View style={styles.headerTitleContainer}>
+    <Text style={styles.headerTitle}>Products</Text>
+    {total > 0 && (
+      <Text style={styles.headerCount}>
+        {productsLength} of {total}
+      </Text>
+    )}
+    <TextInput />
+  </View><TextInput /></View>
+)
 export default function ProductListScreen() {
   const insets = useSafeAreaInsets()
   const {
@@ -41,6 +54,16 @@ export default function ProductListScreen() {
 
   const keyExtractor = useCallback((item: Product) => String(item.id), [])
 
+  // rows are fixed height, so the list can lay out items without measuring them
+  const getItemLayout = useCallback(
+    (_: unknown, index: number) => ({
+      length: CARD_HEIGHT + CARD_GAP,
+      offset: (CARD_HEIGHT + CARD_GAP) * index,
+      index,
+    }),
+    [],
+  )
+
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage()
@@ -51,27 +74,18 @@ export default function ProductListScreen() {
     return <InitialLoader />
   }
 
-  // full-screen error only when there's nothing to show; a failed
-  // page-3 fetch shouldn't wipe an already visible list
   if (isError && products.length === 0) {
     return <ErrorState message={error?.message} onRetry={() => refetch()} />
   }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Products</Text>
-        {total > 0 && (
-          <Text style={styles.headerCount}>
-            {products.length} of {total}
-          </Text>
-        )}
-      </View>
 
       <FlatList
         data={products}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
         refreshControl={
@@ -81,6 +95,9 @@ export default function ProductListScreen() {
             tintColor={colors.accent}
           />
         }
+        removeClippedSubviews={true}
+
+        ListHeaderComponent={<ListHeaderComponent productsLength={products.length} total={total} />}
         ListFooterComponent={isFetchingNextPage ? <ListFooterLoader /> : null}
         ListEmptyComponent={<EmptyState />}
         contentContainerStyle={
@@ -97,7 +114,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
+  headerContainer: {
+  },
+  headerTitleContainer: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
@@ -111,7 +131,7 @@ const styles = StyleSheet.create({
   },
   headerCount: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: colors.textSecondary
   },
   listContent: {
     paddingBottom: spacing.xl,

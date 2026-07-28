@@ -39,7 +39,6 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
         style={({ pressed }) => [styles.retryButton, pressed && styles.retryPressed]}
         onPress={onRetry}
         accessibilityRole="button"
-        accessibilityLabel="Retry loading products"
       >
         <Text style={styles.retryText}>Retry</Text>
       </Pressable>
