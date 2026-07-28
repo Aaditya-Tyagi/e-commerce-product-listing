@@ -12,11 +12,11 @@ import { useProducts } from '../hooks/useproductData'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import type { Product } from '../types/productResponse'
 import { ProductCard, CARD_HEIGHT, CARD_GAP } from '../components/ProductCard'
+import { ListSkeleton } from '../components/ListSkeleton'
 import { SearchBar } from '../components/SearchBar'
 import {
   EmptyState,
   ErrorState,
-  InitialLoader,
   ListFooterLoader,
 } from '../components/ListStates'
 import { colors, spacing } from '../theme'
@@ -89,7 +89,7 @@ export default function ProductListScreen() {
       <SearchBar value={searchText} onChangeText={setSearchText} />
 
       {isLoading ? (
-        <InitialLoader />
+        <ListSkeleton />
       ) : isError && products.length === 0 ? (
         <ErrorState message={error?.message} onRetry={() => refetch()} />
       ) : (

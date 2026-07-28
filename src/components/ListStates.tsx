@@ -8,15 +8,6 @@ import {
 } from 'react-native'
 import { colors, radius, spacing } from '../theme'
 
-export function InitialLoader() {
-  return (
-    <View style={styles.center}>
-      <ActivityIndicator size="large" color={colors.accent} />
-      <Text style={styles.mutedText}>Loading products…</Text>
-    </View>
-  )
-}
-
 export function ListFooterLoader() {
   return (
     <View style={styles.footer}>

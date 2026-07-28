@@ -1,26 +1,68 @@
-import React, { memo } from 'react'
+import React, { memo, useState } from 'react'
 import { Image, StyleSheet, Text, View } from 'react-native'
 import type { Product } from '../types/productResponse'
 import { colors, radius, spacing } from '../theme'
 import { formatPrice, originalPrice } from '../utils/format'
+import { Skeleton } from './Skeleton'
 
 // fixed card height so the list can use getItemLayout
 export const CARD_HEIGHT = 140
 export const CARD_GAP = spacing.md
 
 interface ProductCardProps {
-  product: Product
+  product?: Product
+  isLoading?: boolean
 }
 
-function ProductCardBase({ product }: ProductCardProps) {
+// shimmer placeholder while the image downloads, gray fallback if it fails.
+// the image stays mounted at opacity 0 so loading can actually happen
+function ProductImage({ uri }: { uri: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return (
+      <View style={styles.imageTile}>
+        <Text style={styles.imageFallbackText}>No image</Text>
+      </View>
+    )
+  }
+
+  return (
+    <View style={styles.imageTile}>
+      <Image
+        source={{ uri }}
+        style={[styles.image, !loaded && styles.imageHidden]}
+        resizeMode="contain"
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+      {!loaded && <Skeleton width={88} height={88} style={styles.imageOverlay} />}
+    </View>
+  )
+}
+
+function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
+  if (isLoading || !product) {
+    return (
+      <View style={styles.card}>
+        <Skeleton width={96} height={96} />
+        <View style={styles.info}>
+          <Skeleton width="85%" height={14} />
+          <Skeleton width="55%" height={14} style={styles.skeletonGap} />
+          <Skeleton width="40%" height={18} style={styles.skeletonGapLarge} />
+          <Skeleton width={48} height={16} borderRadius={radius.pill} style={styles.skeletonGap} />
+        </View>
+      </View>
+    )
+  }
+
   const { title, brand, price, discountPercentage, rating, thumbnail } = product
   const hasDiscount = discountPercentage > 0
 
   return (
     <View style={styles.card}>
-      <View style={styles.imageTile}>
-        <Image source={{ uri: thumbnail }} style={styles.image} resizeMode="contain" />
-      </View>
+      <ProductImage uri={thumbnail} />
 
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={2}>
@@ -70,6 +112,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  skeletonGap: {
+    marginTop: spacing.sm,
+  },
+  skeletonGapLarge: {
+    marginTop: spacing.md,
+  },
   imageTile: {
     width: 96,
     height: 96,
@@ -82,6 +130,16 @@ const styles = StyleSheet.create({
   image: {
     width: 88,
     height: 88,
+  },
+  imageHidden: {
+    opacity: 0,
+  },
+  imageOverlay: {
+    position: 'absolute',
+  },
+  imageFallbackText: {
+    fontSize: 11,
+    color: colors.textMuted,
   },
   info: {
     flex: 1,
