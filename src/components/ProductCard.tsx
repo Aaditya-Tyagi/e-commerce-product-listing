@@ -1,13 +1,24 @@
 import React, { memo, useState } from 'react'
-import { Image, StyleSheet, Text, View } from 'react-native'
+import { Dimensions, Image, StyleSheet, Text, View } from 'react-native'
 import type { Product } from '../types/productResponse'
 import { colors, radius, spacing } from '../theme'
 import { formatPrice, originalPrice } from '../utils/format'
 import { Skeleton } from './Skeleton'
 
-// fixed card height so the list can use getItemLayout
-export const CARD_HEIGHT = 140
+// two columns, so the card width is whatever is left after the screen
+// padding and the gap between them
+export const NUM_COLUMNS = 3
 export const CARD_GAP = spacing.md
+
+const SCREEN_WIDTH = Dimensions.get('window').width
+export const CARD_WIDTH =
+  (SCREEN_WIDTH - spacing.lg * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS
+
+// image takes roughly 60% of the card, details the rest.
+// fixed so the list can use getItemLayout
+const IMAGE_HEIGHT = 132
+const DETAILS_HEIGHT = 88
+export const CARD_HEIGHT = IMAGE_HEIGHT + DETAILS_HEIGHT
 
 interface ProductCardProps {
   product?: Product
@@ -22,14 +33,14 @@ function ProductImage({ uri }: { uri: string }) {
 
   if (failed) {
     return (
-      <View style={styles.imageTile}>
+      <View style={[styles.imageArea, styles.imageFallback]}>
         <Text style={styles.imageFallbackText}>No image</Text>
       </View>
     )
   }
 
   return (
-    <View style={styles.imageTile}>
+    <View style={styles.imageArea}>
       <Image
         source={{ uri }}
         style={[styles.image, !loaded && styles.imageHidden]}
@@ -37,7 +48,14 @@ function ProductImage({ uri }: { uri: string }) {
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />
-      {!loaded && <Skeleton width={88} height={88} style={styles.imageOverlay} />}
+      {!loaded && (
+        <Skeleton
+          width="100%"
+          height="100%"
+          borderRadius={0}
+          style={styles.imageOverlay}
+        />
+      )}
     </View>
   )
 }
@@ -46,12 +64,11 @@ function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
   if (isLoading || !product) {
     return (
       <View style={styles.card}>
-        <Skeleton width={96} height={96} />
-        <View style={styles.info}>
-          <Skeleton width="85%" height={14} />
-          <Skeleton width="55%" height={14} style={styles.skeletonGap} />
-          <Skeleton width="40%" height={18} style={styles.skeletonGapLarge} />
-          <Skeleton width={48} height={16} borderRadius={radius.pill} style={styles.skeletonGap} />
+        <Skeleton width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
+        <View style={styles.details}>
+          <Skeleton width="90%" height={12} />
+          <Skeleton width="60%" height={12} style={styles.skeletonGap} />
+          <Skeleton width="45%" height={16} style={styles.skeletonGapLarge} />
         </View>
       </View>
     )
@@ -64,7 +81,19 @@ function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
     <View style={styles.card}>
       <ProductImage uri={thumbnail} />
 
-      <View style={styles.info}>
+      {hasDiscount && (
+        <View style={styles.discountBadge}>
+          <Text style={styles.discountText}>
+            {Math.round(discountPercentage)}% OFF
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.ratingChip}>
+        <Text style={styles.ratingText}>★ {(rating ?? 0).toFixed(1)}</Text>
+      </View>
+
+      <View style={styles.details}>
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>
@@ -79,15 +108,6 @@ function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
               {formatPrice(originalPrice(price, discountPercentage))}
             </Text>
           )}
-          {hasDiscount && (
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>{Math.round(discountPercentage)}% OFF</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.ratingChip}>
-          <Text style={styles.ratingText}>★ {(rating ?? 0).toFixed(1)}</Text>
         </View>
       </View>
     </View>
@@ -96,40 +116,28 @@ function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
 
 const styles = StyleSheet.create({
   card: {
+    width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    padding: spacing.md,
-    marginHorizontal: spacing.lg,
-    marginBottom: CARD_GAP,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  skeletonGap: {
-    marginTop: spacing.sm,
-  },
-  skeletonGapLarge: {
-    marginTop: spacing.md,
-  },
-  imageTile: {
-    width: 96,
-    height: 96,
-    borderRadius: radius.sm,
+  imageArea: {
+    height: IMAGE_HEIGHT,
     backgroundColor: colors.imageTile,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
   image: {
-    width: 88,
-    height: 88,
+    width: '100%',
+    height: '100%',
   },
   imageHidden: {
     opacity: 0,
@@ -137,66 +145,82 @@ const styles = StyleSheet.create({
   imageOverlay: {
     position: 'absolute',
   },
+  imageFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   imageFallbackText: {
     fontSize: 11,
     color: colors.textMuted,
   },
-  info: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  brand: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  price: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  originalPrice: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textDecorationLine: 'line-through',
-    marginLeft: spacing.sm,
-  },
   discountBadge: {
-    backgroundColor: colors.discountBg,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    backgroundColor: colors.discountText,
+    borderRadius: radius.sm,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    marginLeft: spacing.sm,
   },
   discountText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
-    color: colors.discountText,
+    color: '#FFFFFF',
   },
   ratingChip: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: IMAGE_HEIGHT - 12,
+    right: spacing.sm,
     backgroundColor: colors.ratingBg,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    marginTop: spacing.xs,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   ratingText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: colors.ratingText,
+  },
+  details: {
+    flex: 1,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  title: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 17,
+    color: colors.textPrimary,
+  },
+  brand: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 'auto',
+    marginBottom: spacing.sm,
+  },
+  price: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  originalPrice: {
+    fontSize: 11,
+    color: colors.textMuted,
+    textDecorationLine: 'line-through',
+    marginLeft: spacing.xs,
+  },
+  skeletonGap: {
+    marginTop: spacing.sm,
+  },
+  skeletonGapLarge: {
+    marginTop: spacing.md,
   },
 })
 

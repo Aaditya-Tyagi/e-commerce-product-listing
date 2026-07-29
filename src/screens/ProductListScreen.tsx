@@ -14,7 +14,12 @@ import { SortButton } from '../components/SortButton'
 import { CategoryChips } from '../components/CategoryChips'
 import type { SortOrder } from '../api/products'
 import type { Product } from '../types/productResponse'
-import { ProductCard, CARD_HEIGHT, CARD_GAP } from '../components/ProductCard'
+import {
+  ProductCard,
+  CARD_HEIGHT,
+  CARD_GAP,
+  NUM_COLUMNS,
+} from '../components/ProductCard'
 import { ListSkeleton } from '../components/ListSkeleton'
 import { SearchBar } from '../components/SearchBar'
 import {
@@ -76,15 +81,16 @@ export default function ProductListScreen() {
 
   const keyExtractor = useCallback((item: Product) => String(item.id), [])
 
-  // rows are fixed height, so the list can lay out items without measuring them
-  const getItemLayout = useCallback(
-    (_: unknown, index: number) => ({
-      length: CARD_HEIGHT + CARD_GAP,
-      offset: (CARD_HEIGHT + CARD_GAP) * index,
+  // cards are a fixed size, so the list can place them without measuring.
+  // two per row, so the offset follows the row rather than the item
+  const getItemLayout = useCallback((_: unknown, index: number) => {
+    const rowHeight = CARD_HEIGHT + CARD_GAP
+    return {
+      length: rowHeight,
+      offset: rowHeight * Math.floor(index / NUM_COLUMNS),
       index,
-    }),
-    [],
-  )
+    }
+  }, [])
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -115,6 +121,8 @@ export default function ProductListScreen() {
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
+          numColumns={NUM_COLUMNS}
+          columnWrapperStyle={styles.column}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
           refreshControl={
@@ -168,7 +176,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   listContent: {
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
+  },
+  column: {
+    gap: CARD_GAP,
+    marginBottom: CARD_GAP,
   },
   emptyContent: {
     flexGrow: 1,
