@@ -8,19 +8,13 @@ React Native CLI (0.86) + TypeScript.
 
 ## Setup
 
-Requires Node 20+ and a working React Native environment
-([setup guide](https://reactnative.dev/docs/environment-setup)) — JDK 17 and
-Android Studio for Android, Xcode + CocoaPods for iOS.
+Requires Node 22.11+ (see `engines` in `package.json`) and a working React
+Native environment ([setup guide](https://reactnative.dev/docs/environment-setup))
+— JDK 17 and Android Studio for Android, Xcode + CocoaPods for iOS.
 
 ```bash
 npm install
-
-# android
 npm run android
-
-# ios
-cd ios && pod install && cd ..
-npm run ios
 ```
 
 If Metro isn't already running, `npm start` in a separate terminal.
@@ -122,12 +116,54 @@ Deliberately kept out:
 - **A failed page load keeps the list.** Rather than replacing loaded products
   with a full-screen error, the list stays and the error surfaces only when
   there's nothing to show.
-- Developed and tested against an Android emulator.
 
 ## With more time
 
+**Product detail, and how you get there**
+
+This is where I'd spend the most time. The types already model the full
+response — description, stock, warranty, shipping, reviews — so there's a real
+screen's worth of content waiting behind each card.
+
+I'd make the transition part of the product rather than a plain push. Tapping a
+card opens a bottom sheet with the essentials — image, price, stock, a short
+description — so browsing stays uninterrupted and you can flick it away and keep
+scrolling. Dragging the sheet past a threshold, or tapping through, would grow
+it into the full screen continuously: the image scales up into the header, the
+sheet's corner radius flattens out, and the remaining content fades in. One
+gesture, no jump cut between two separate screens.
+
+That's Reanimated and Gesture Handler work — the sheet's position driven by a
+shared value so the drag stays on the UI thread, a shared element transition for
+the image between the card and the detail header, and the scroll position of the
+detail view interpolating the header as you read.
+
+**A card worth looking at**
+
+The grid works, but the card itself could do more selling. Bigger, better-framed
+imagery, clearer price hierarchy, stock and delivery cues, tags like "bestseller"
+where the data supports it — the kind of card that makes you want to tap it
+rather than just read it.
+
+**Responsive across devices**
+
+Card width is already derived from the screen rather than hardcoded, so the grid
+adapts from small phones to large ones. I'd take that further: column count
+driven by available width instead of a fixed two, `useWindowDimensions` so the
+layout responds to rotation and split-screen, and typography that scales with the
+card rather than staying fixed — so a 5" phone and a tablet both get a grid that
+looks designed for them.
+
+**More motion**
+
+Cards easing in as they enter the viewport, the price counting up when a sort
+changes the order, chips animating their selection rather than snapping, press
+feedback on cards. All Reanimated, all on the UI thread so none of it competes
+with fetching and rendering.
+
+**Rest**
+
 - A "couldn't load more, tap to retry" footer state
-- Product detail screen — the types already model the full response
 - Unit tests for `getNextPageParam`, the debounce hook, and the card's
   loading / loaded / error variants
 - Runtime response validation with zod in place of the current shape check
