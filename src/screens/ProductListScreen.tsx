@@ -8,6 +8,8 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { RootStackParamList } from '../navigation/types'
 import { useProducts, ProductFilters } from '../hooks/useProducts'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { SortButton } from '../components/SortButton'
@@ -29,7 +31,9 @@ import {
 } from '../components/ListStates'
 import { colors, spacing } from '../theme'
 
-export default function ProductListScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'ProductList'>
+
+export default function ProductListScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets()
 
   const [searchText, setSearchText] = useState('')
@@ -57,9 +61,17 @@ export default function ProductListScreen() {
     isRefetching,
   } = useProducts(filters)
 
+  // stable, so memoised cards are not invalidated on every render
+  const openProduct = useCallback(
+    (product: Product) => navigation.navigate('ProductDetail', { product }),
+    [navigation],
+  )
+
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<Product>) => <ProductCard product={item} />,
-    [],
+    ({ item }: ListRenderItemInfo<Product>) => (
+      <ProductCard product={item} onPress={openProduct} />
+    ),
+    [openProduct],
   )
 
   const keyExtractor = useCallback((item: Product) => String(item.id), [])

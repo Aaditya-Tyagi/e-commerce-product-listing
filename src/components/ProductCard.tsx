@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react'
-import { Dimensions, Image, StyleSheet, Text, View } from 'react-native'
+import { Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Product } from '../types/productResponse'
 import { colors, radius, spacing } from '../theme'
 import { formatPrice, originalPrice } from '../utils/format'
@@ -23,6 +23,8 @@ export const CARD_HEIGHT = IMAGE_HEIGHT + DETAILS_HEIGHT
 interface ProductCardProps {
   product?: Product
   isLoading?: boolean
+  // takes the product back so the screen can keep one stable callback
+  onPress?: (product: Product) => void
 }
 
 // shimmer placeholder while the image downloads, gray fallback if it fails.
@@ -60,7 +62,7 @@ function ProductImage({ uri }: { uri: string }) {
   )
 }
 
-function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
+function ProductCardBase({ product, isLoading = false, onPress }: ProductCardProps) {
   if (isLoading || !product) {
     return (
       <View style={styles.card}>
@@ -78,7 +80,12 @@ function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
   const hasDiscount = discountPercentage > 0
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      onPress={() => onPress?.(product)}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+    >
       <ProductImage uri={thumbnail} />
 
       {hasDiscount && (
@@ -110,7 +117,7 @@ function ProductCardBase({ product, isLoading = false }: ProductCardProps) {
           )}
         </View>
       </View>
-    </View>
+    </Pressable>
   )
 }
 
@@ -128,6 +135,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  cardPressed: {
+    opacity: 0.7,
   },
   imageArea: {
     height: IMAGE_HEIGHT,

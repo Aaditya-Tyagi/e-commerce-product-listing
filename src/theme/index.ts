@@ -10,7 +10,7 @@ export const colors = {
   textSecondary: '#6B6862',
   textMuted: '#A3A09A',
 
-  accent: '#4F46E5',
+  accent: '#137A42',
   // text sitting on any solid fill (accent chip, discount badge)
   onFill: '#FFFFFF',
 
@@ -21,7 +21,7 @@ export const colors = {
   ratingText: '#A2680C',
 
   danger: '#C4362F',
-} as const
+} as const;
 
 export const spacing = {
   xs: 4,
@@ -29,13 +29,13 @@ export const spacing = {
   md: 12,
   lg: 16,
   xl: 24,
-} as const
+} as const;
 
 // search field and sort button share this so they line up in the row
-export const CONTROL_HEIGHT = 44
+export const CONTROL_HEIGHT = 44;
 
 export const radius = {
   sm: 6,
   md: 12,
   pill: 999,
-} as const
+} as const;
