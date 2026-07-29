@@ -31,6 +31,8 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets()
   const { product, isLoading, isError, error, refetch } = useProduct(productId)
 
+
+  const onBackPress = () => navigation.goBack()
   // opening from the grid seeds the cache first, so these only show on a cold
   // open with nothing cached
   if (isLoading || !product) {
@@ -41,7 +43,7 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
         ) : (
           <ProductDetailSkeleton />
         )}
-        <BackButton onPress={navigation.goBack} />
+        <BackButton onPress={onBackPress} />
       </View>
     )
   }
@@ -143,7 +145,7 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
         </View>
       </ScrollView>
 
-      <BackButton onPress={navigation.goBack} />
+      <BackButton onPress={onBackPress} />
 
       <View
         style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}
