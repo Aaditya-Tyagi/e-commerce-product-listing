@@ -1,97 +1,135 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# E-commerce Product Listing
 
-# Getting Started
+A single-screen React Native app that lists products from the
+[DummyJSON API](https://dummyjson.com/docs/products) with infinite scroll,
+search, category filter and price sort.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+React Native CLI (0.86) + TypeScript.
 
-## Step 1: Start Metro
+## Setup
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Requires Node 20+ and a working React Native environment
+([setup guide](https://reactnative.dev/docs/environment-setup)) — JDK 17 and
+Android Studio for Android, Xcode + CocoaPods for iOS.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+```bash
+npm install
 
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# android
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# ios
+cd ios && pod install && cd ..
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+If Metro isn't already running, `npm start` in a separate terminal.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+No environment variables or API keys needed.
 
-## Step 3: Modify your app
+## Features
 
-Now that you have successfully run the app, let's make changes!
+**Core**
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+- Product cards with image, title, brand, price, discount and rating
+- Pagination, 20 per request, first page fetched on launch
+- Infinite scroll that stops cleanly once everything is loaded, and never
+  fires a duplicate request while one is in flight
+- Pull to refresh
+- Distinct states for initial load, loading more, refreshing, error and empty
+- Network failures and unexpected payloads handled at the API boundary
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+**Extras**
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+- Debounced search (400ms)
+- Filter by category
+- Sort by price, ascending / descending
+- Skeleton loaders while content loads
+- Image placeholders with a fallback for thumbnails that fail to load
 
-## Congratulations! :tada:
+## Architecture
 
-You've successfully run and modified your React Native App. :partying_face:
+```
+src/
+  api/          axios instance + one file per resource (products, categories)
+  hooks/        one hook per query, plus a debounce helper
+  components/   presentational pieces
+  screens/      ProductListScreen — composes the above, owns filter UI state
+  types/        API response types
+  theme/        colours, spacing, radius
+  utils/        price formatting
+```
 
-### Now what?
+Split by responsibility, with one rule per layer:
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+- `api/` is the only place that knows URLs and query params
+- `hooks/` is the only place that knows caching and pagination
+- `components/` and `screens/` only know props and local UI state
 
-# Troubleshooting
+Data flows one way. The screen holds what the user picked and passes it down as
+a single `filters` object; that object is also the React Query cache key, so
+changing search, category or sort produces a new cache entry and refetches on
+its own — no manual refetch wiring, and revisiting a previous filter renders
+instantly from cache.
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+Adding another filter is three small edits: a field on `ProductFilters`, its
+translation to a query param in `api/products.ts`, and a control in the screen.
 
-# Learn More
+A few decisions worth calling out:
 
-To learn more about React Native, take a look at the following resources:
+- **Pagination is derived, not tracked.** The next `skip` is simply how many
+  items are already loaded, and when that reaches `total` there is no next page.
+  No page counters to keep in sync.
+- **Cards are a fixed height**, which lets `FlatList` use `getItemLayout` and
+  skip measuring rows entirely — faster layout and an accurate scrollbar.
+- **Rows are memoised with stable callbacks**, so scrolling and paging don't
+  re-render the whole list.
+- **Skeletons share the card's dimensions**, so real content replaces them with
+  no layout shift, and the pulse animation runs on the native driver — it stays
+  smooth even while the JS thread is busy parsing the response.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## Dependencies
+
+| Package | Why |
+| --- | --- |
+| `@tanstack/react-query` | `useInfiniteQuery` handles paging, caching, request dedupe and the loading/error flags. |
+| `axios` | Interceptors normalise every failure into one error shape in a single place. |
+| `react-native-safe-area-context` | Notch and status bar insets. |
+
+Deliberately kept out:
+
+- **No state management library.** React Query owns the server data; the only
+  client state is search text, selected category and sort order — three
+  `useState` calls in the screen.
+- **No UI kit.** A theme file and `StyleSheet` are less overhead than a
+  component library at this size.
+- **No image caching library.** `react-native-fast-image` is barely maintained,
+  so the built-in `Image` with load and error handling covers it.
+
+## Assumptions and trade-offs
+
+- **Search takes priority over category.** DummyJSON exposes them as separate
+  endpoints (`/products/search` and `/products/category/{slug}`), so they can't
+  combine in one request. An API that took both as query params would need no
+  app-side change beyond passing them through.
+- **Sorting is server-side**, so it applies to the whole dataset rather than
+  just the loaded pages, and changing it starts again from page 1 — which is
+  the correct result for the user.
+- **Pull to refresh resets the query rather than refetching it.** React Query's
+  `refetch` on an infinite query re-requests every page currently loaded; for a
+  list several pages deep that's several requests to show the same items. Reset
+  gives the user what they actually want from a pull: a clean first page.
+- **A failed page load keeps the list.** Rather than replacing loaded products
+  with a full-screen error, the list stays and the error surfaces only when
+  there's nothing to show.
+- Developed and tested against an Android emulator.
+
+## With more time
+
+- A "couldn't load more, tap to retry" footer state
+- Product detail screen — the types already model the full response
+- Unit tests for `getNextPageParam`, the debounce hook, and the card's
+  loading / loaded / error variants
+- Runtime response validation with zod in place of the current shape check
+- Persist the React Query cache so the list is available on a cold start offline
+- Dark mode — the theme file is already the single source for colours
