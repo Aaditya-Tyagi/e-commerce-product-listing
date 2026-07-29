@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   discountText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onFill,
   },
   ratingChip: {
     position: 'absolute',

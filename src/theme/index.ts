@@ -1,17 +1,26 @@
+// warm neutrals rather than blue-greys, so cards read as raised against the
+// page instead of everything being flat white
 export const colors = {
-  background: '#F4F5F7',
+  background: '#F6F5F2',
   card: '#FFFFFF',
-  textPrimary: '#171A1F',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  accent: '#2563EB',
-  discountBg: '#E7F6EC',
-  discountText: '#0F8A3D',
-  ratingBg: '#FFF7E6',
-  ratingText: '#B45309',
-  border: '#E5E7EB',
-  danger: '#DC2626',
-  imageTile: '#F0F1F3',
+  border: '#E7E4DE',
+  imageTile: '#F1EFEA',
+
+  textPrimary: '#1C1B19',
+  textSecondary: '#6B6862',
+  textMuted: '#A3A09A',
+
+  accent: '#4F46E5',
+  // text sitting on any solid fill (accent chip, discount badge)
+  onFill: '#FFFFFF',
+
+  discountBg: '#E8F5EC',
+  discountText: '#137A42',
+
+  ratingBg: '#FDF3E0',
+  ratingText: '#A2680C',
+
+  danger: '#C4362F',
 } as const
 
 export const spacing = {

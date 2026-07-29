@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   retryText: {
-    color: '#FFFFFF',
+    color: colors.onFill,
     fontWeight: '600',
     fontSize: 15,
   },

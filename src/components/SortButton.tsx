@@ -1,14 +1,13 @@
 import React from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text } from 'react-native'
 import type { SortOrder } from '../api/products'
-import { colors, radius, spacing, CONTROL_HEIGHT } from '../theme'
+import { colors, radius, CONTROL_HEIGHT } from '../theme'
 
 interface SortButtonProps {
   order?: SortOrder
   onChange: (order?: SortOrder) => void
 }
 
-// tapping cycles through: off -> price low to high -> price high to low -> off
 export function SortButton({ order, onChange }: SortButtonProps) {
   const nextOrder =
     order === undefined ? 'asc' : order === 'asc' ? 'desc' : undefined
@@ -21,48 +20,32 @@ export function SortButton({ order, onChange }: SortButtonProps) {
       style={[styles.button, isActive && styles.buttonActive]}
       onPress={() => onChange(nextOrder)}
     >
-      <Text style={[styles.arrow, isActive && styles.textActive]}>{arrow}</Text>
-      <View>
-        <Text style={styles.label}>Sort</Text>
-        <Text style={[styles.value, isActive && styles.textActive]}>Price</Text>
-      </View>
+      <Text style={[styles.arrow, isActive && styles.arrowActive]}>{arrow}</Text>
     </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
   button: {
+    width: CONTROL_HEIGHT,
     height: CONTROL_HEIGHT,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
+    justifyContent: 'center',
+    borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
   buttonActive: {
+    backgroundColor: colors.accent,
     borderColor: colors.accent,
-    backgroundColor: colors.discountBg,
   },
   arrow: {
-    fontSize: 15,
+    fontSize: 17,
     color: colors.textSecondary,
   },
-  label: {
-    fontSize: 9,
-    lineHeight: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    color: colors.textMuted,
-  },
-  value: {
-    fontSize: 13,
+  arrowActive: {
+    color: colors.onFill,
     fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  textActive: {
-    color: colors.accent,
   },
 })

@@ -31,6 +31,7 @@ export function CategoryChips({ selected, onChange }: CategoryChipsProps) {
       }
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.row}
+      style={styles.list}
     />
   )
 }
@@ -51,15 +52,23 @@ function Chip({
   )
 }
 
+// chips would otherwise stretch to whatever height the row ends up being
+const CHIP_HEIGHT = 34
+
 const styles = StyleSheet.create({
+  list: {
+    flexGrow: 0,
+    flexShrink: 0,
+    height: CHIP_HEIGHT,
+  },
   row: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
     gap: spacing.sm,
   },
   chip: {
+    height: CHIP_HEIGHT,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
     borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
@@ -75,7 +84,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   labelActive: {
-    color: '#FFFFFF',
+    color: colors.onFill,
     fontWeight: '600',
   },
 })
