@@ -7,6 +7,10 @@ screen.
 
 React Native CLI (0.86) + TypeScript.
 
+| Product list | Product detail |
+| --- | --- |
+| <img src="screenshots/list.png" width="260" alt="Product grid with search, category chips and sort" /> | <img src="screenshots/detail.png" width="260" alt="Product detail with image gallery, specification and reviews" /> |
+
 ## Setup
 
 Requires Node 22.11+ (see `engines` in `package.json`) and a working React
