@@ -10,7 +10,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/types'
+import { useQueryClient } from '@tanstack/react-query'
 import { useProducts, ProductFilters } from '../hooks/useProducts'
+import { productQueryKey } from '../hooks/useProduct'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { SortButton } from '../components/SortButton'
 import { CategoryChips } from '../components/CategoryChips'
@@ -35,6 +37,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ProductList'>
 
 export default function ProductListScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets()
+  const queryClient = useQueryClient()
 
   const [searchText, setSearchText] = useState('')
   const [category, setCategory] = useState<string | undefined>()
@@ -61,10 +64,12 @@ export default function ProductListScreen({ navigation }: Props) {
     isRefetching,
   } = useProducts(filters)
 
-  // stable, so memoised cards are not invalidated on every render
   const openProduct = useCallback(
-    (product: Product) => navigation.navigate('ProductDetail', { product }),
-    [navigation],
+    (product: Product) => {
+      queryClient.setQueryData(productQueryKey(product.id), product)
+      navigation.navigate('ProductDetail', { productId: product.id })
+    },
+    [navigation, queryClient],
   )
 
   const renderItem = useCallback(
@@ -133,7 +138,6 @@ export default function ProductListScreen({ navigation }: Props) {
               tintColor={colors.accent}
             />
           }
-          removeClippedSubviews={true}
           ListFooterComponent={isFetchingNextPage ? <ListFooterLoader /> : null}
           ListEmptyComponent={<EmptyState />}
           contentContainerStyle={

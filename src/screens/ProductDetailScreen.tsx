@@ -13,17 +13,75 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/types'
 import type { Product, ProductReview } from '../types/productResponse'
+import { useProduct } from '../hooks/useProduct'
+import { ErrorState } from '../components/ListStates'
+import { Skeleton } from '../components/Skeleton'
 import { colors, radius, spacing } from '../theme'
 import { formatPrice, originalPrice } from '../utils/format'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 const GALLERY_HEIGHT = SCREEN_HEIGHT * 0.42
+const CARD_W = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetail'>
 
 export default function ProductDetailScreen({ route, navigation }: Props) {
-  const { product } = route.params
+  const { productId } = route.params
   const insets = useSafeAreaInsets()
+  const { product, isLoading, isError, error, refetch } = useProduct(productId)
+
+  const back = (
+    <Pressable
+      style={[styles.backButton, { top: insets.top + spacing.sm }]}
+      onPress={navigation.goBack}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+    >
+      <View style={styles.backChevron} />
+    </Pressable>
+  )
+
+  // opening from the grid seeds the cache first, so this only shows on a cold
+  // open such as a deep link
+  if (isLoading || !product) {
+    if (isError) {
+      return (
+        <View style={styles.container}>
+          <ErrorState message={error?.message} onRetry={() => refetch()} />
+          {back}
+        </View>
+      )
+    }
+    return (
+      <View style={styles.container}>
+        <Skeleton
+          width="100%"
+          height={GALLERY_HEIGHT + insets.top}
+          borderRadius={0}
+        />
+        <View style={styles.loadingBody}>
+          <Skeleton width="75%" height={22} />
+          <Skeleton width="40%" height={14} style={styles.loadingGap} />
+          <Skeleton width="35%" height={30} style={styles.loadingGapLarge} />
+          <Skeleton
+            width={140}
+            height={26}
+            borderRadius={radius.pill}
+            style={styles.loadingGap}
+          />
+          <Skeleton width="90%" height={13} style={styles.loadingGapLarge} />
+          <Skeleton width="95%" height={13} style={styles.loadingGap} />
+          <Skeleton width="60%" height={13} style={styles.loadingGap} />
+          <View style={styles.loadingCards}>
+            <Skeleton width={CARD_W} height={68} borderRadius={radius.md} />
+            <Skeleton width={CARD_W} height={68} borderRadius={radius.md} />
+          </View>
+        </View>
+        {back}
+      </View>
+    )
+  }
+
   const hasDiscount = product.discountPercentage > 0
   const inStock = product.stock > 0
 
@@ -110,14 +168,7 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
         </View>
       </ScrollView>
 
-      <Pressable
-        style={[styles.backButton, { top: insets.top + spacing.sm }]}
-        onPress={navigation.goBack}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <View style={styles.backChevron} />
-      </Pressable>
+      {back}
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}>
         <View>
@@ -268,6 +319,25 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: spacing.xl,
+  },
+  loadingBody: {
+    backgroundColor: colors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -24,
+    padding: spacing.lg,
+    flex: 1,
+  },
+  loadingGap: {
+    marginTop: spacing.md,
+  },
+  loadingGapLarge: {
+    marginTop: spacing.lg,
+  },
+  loadingCards: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
   backButton: {
     position: 'absolute',

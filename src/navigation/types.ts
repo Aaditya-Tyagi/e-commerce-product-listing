@@ -1,8 +1,6 @@
-import type { Product } from '../types/productResponse'
-
-// the list already has the whole product, so it travels as a param rather
-// than the detail screen refetching it by id
+// screens take an id, never a whole object, so a deep link or a restored
+// navigation state can open them the same way a tap does
 export type RootStackParamList = {
   ProductList: undefined
-  ProductDetail: { product: Product }
+  ProductDetail: { productId: number }
 }

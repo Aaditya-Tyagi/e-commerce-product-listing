@@ -56,3 +56,13 @@ export const getProducts = async ({
     limit: response.data.limit ?? limit,
   };
 };
+
+export const getProduct = async (id: number): Promise<Product> => {
+  const response = await axiosInstance.get(`/products/${id}`);
+
+  if (typeof response.data?.id !== 'number') {
+    throw { message: 'Unexpected response from server.' };
+  }
+
+  return response.data;
+};
