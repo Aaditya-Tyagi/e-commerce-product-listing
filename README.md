@@ -1,8 +1,9 @@
 # E-commerce Product Listing
 
-A single-screen React Native app that lists products from the
+A React Native app that lists products from the
 [DummyJSON API](https://dummyjson.com/docs/products) with infinite scroll,
-search, category filter and price sort.
+search, category filter and price sort, and opens each one on its own detail
+screen.
 
 React Native CLI (0.86) + TypeScript.
 
@@ -35,6 +36,7 @@ No environment variables or API keys needed.
 
 **Extras**
 
+- Product detail screen — image gallery, full specification, reviews
 - Debounced search (400ms)
 - Filter by category
 - Sort by price, ascending / descending
@@ -48,7 +50,8 @@ src/
   api/          axios instance + one file per resource (products, categories)
   hooks/        one hook per query, plus a debounce helper
   components/   presentational pieces
-  screens/      ProductListScreen — composes the above, owns filter UI state
+  navigation/   the stack's param list
+  screens/      ProductListScreen and ProductDetailScreen
   types/        API response types
   theme/        colours, spacing, radius
   utils/        price formatting
@@ -69,6 +72,12 @@ instantly from cache.
 Adding another filter is three small edits: a field on `ProductFilters`, its
 translation to a query param in `api/products.ts`, and a control in the screen.
 
+Navigation is a typed native stack. `RootStackParamList` declares what each
+screen takes, so a mistyped screen name or a missing param fails to compile
+rather than at the moment a user taps a card. The list response already carries
+every field a product has, so the detail screen receives the product as a route
+param instead of refetching it by id — it opens with no spinner.
+
 A few decisions worth calling out:
 
 - **Pagination is derived, not tracked.** The next `skip` is simply how many
@@ -88,6 +97,9 @@ A few decisions worth calling out:
 | --- | --- |
 | `@tanstack/react-query` | `useInfiniteQuery` handles paging, caching, request dedupe and the loading/error flags. |
 | `axios` | Interceptors normalise every failure into one error shape in a single place. |
+| `@react-navigation/native` | Navigation container and the hooks screens use to move between each other. |
+| `@react-navigation/native-stack` | Push/pop stack that delegates to the platform's own navigation controllers, so transitions and the iOS back gesture are native rather than animated in JS. |
+| `react-native-screens` | Hard peer dependency of native-stack — it is what exposes those native containers, and it detaches off-screen screens from the view hierarchy. |
 | `react-native-safe-area-context` | Notch and status bar insets. |
 
 Deliberately kept out:
@@ -99,6 +111,9 @@ Deliberately kept out:
   component library at this size.
 - **No image caching library.** `react-native-fast-image` is barely maintained,
   so the built-in `Image` with load and error handling covers it.
+- **Native stack over the JS one.** `@react-navigation/stack` would have pulled
+  in gesture-handler and reanimated as well — two native dependencies instead of
+  one, for animations driven from JS rather than by the platform.
 
 ## Assumptions and trade-offs
 
@@ -116,27 +131,36 @@ Deliberately kept out:
 - **A failed page load keeps the list.** Rather than replacing loaded products
   with a full-screen error, the list stays and the error surfaces only when
   there's nothing to show.
+- **The detail screen takes the product as a route param.** The list response
+  already contains every field, so opening a product costs no request and shows
+  no spinner. The trade-off is that the detail view renders the list's snapshot;
+  if stock needed to be live, or if the screen had to be reachable from a deep
+  link by id, it would fetch by id and fall back to the param.
+- **Add to cart is presentational.** There is no cart in the assignment's scope,
+  so the button reflects stock state — disabled and relabelled when a product is
+  out of stock — but doesn't dispatch anything.
+- **Emoji stand in for icons.** Adding an icon library for four glyphs wasn't
+  worth the dependency; `react-native-svg` with a proper set is what I'd use in
+  a real app, since emoji render differently across Android versions.
 
 ## With more time
 
-**Product detail, and how you get there**
+**How you get to the detail screen**
 
-This is where I'd spend the most time. The types already model the full
-response — description, stock, warranty, shipping, reviews — so there's a real
-screen's worth of content waiting behind each card.
+The detail screen is built — gallery, specification, reviews — but reaching it
+is a plain push. I'd make the transition part of the product.
 
-I'd make the transition part of the product rather than a plain push. Tapping a
-card opens a bottom sheet with the essentials — image, price, stock, a short
-description — so browsing stays uninterrupted and you can flick it away and keep
-scrolling. Dragging the sheet past a threshold, or tapping through, would grow
-it into the full screen continuously: the image scales up into the header, the
-sheet's corner radius flattens out, and the remaining content fades in. One
-gesture, no jump cut between two separate screens.
+Tapping a card would open a bottom sheet with the essentials first — image,
+price, stock, a short description — so browsing stays uninterrupted and you can
+flick it away and keep scrolling. Dragging past a threshold, or tapping through,
+would grow the sheet into the full screen continuously: the image scaling up
+into the header, the corner radius flattening out, the rest fading in. One
+gesture, no jump cut.
 
 That's Reanimated and Gesture Handler work — the sheet's position driven by a
 shared value so the drag stays on the UI thread, a shared element transition for
-the image between the card and the detail header, and the scroll position of the
-detail view interpolating the header as you read.
+the image between card and header, and the detail view's scroll position
+interpolating the header as you read.
 
 **A card worth looking at**
 
