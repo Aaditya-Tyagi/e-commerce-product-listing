@@ -74,9 +74,9 @@ translation to a query param in `api/products.ts`, and a control in the screen.
 
 Navigation is a typed native stack. `RootStackParamList` declares what each
 screen takes, so a mistyped screen name or a missing param fails to compile
-rather than at the moment a user taps a card. The list response already carries
-every field a product has, so the detail screen receives the product as a route
-param instead of refetching it by id — it opens with no spinner.
+rather than at the moment a user taps a card. Screens take ids rather than
+objects, which keeps params serialisable and leaves each screen responsible for
+its own data.
 
 A few decisions worth calling out:
 
@@ -131,11 +131,14 @@ Deliberately kept out:
 - **A failed page load keeps the list.** Rather than replacing loaded products
   with a full-screen error, the list stays and the error surfaces only when
   there's nothing to show.
-- **The detail screen takes the product as a route param.** The list response
-  already contains every field, so opening a product costs no request and shows
-  no spinner. The trade-off is that the detail view renders the list's snapshot;
-  if stock needed to be live, or if the screen had to be reachable from a deep
-  link by id, it would fetch by id and fall back to the param.
+- **The detail screen takes an id, not a product.** It fetches its own data, so
+  it works the same however it is reached and always shows current stock rather
+  than the list's snapshot. To keep the common path instant, tapping a card
+  writes the product it already has into the query cache before navigating — the
+  screen renders from cache immediately and revalidates in the background, and
+  the loading state only appears when there is nothing cached. Passing an id
+  also means the screen would be reachable from a deep link or a restored
+  navigation state without change; wiring that up was out of scope.
 - **Add to cart is presentational.** There is no cart in the assignment's scope,
   so the button reflects stock state — disabled and relabelled when a product is
   out of stock — but doesn't dispatch anything.
