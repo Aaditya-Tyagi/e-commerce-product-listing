@@ -29,23 +29,6 @@ import {
 } from '../components/ListStates'
 import { colors, spacing } from '../theme'
 
-const ScreenHeader = ({
-  productsLength,
-  total,
-}: {
-  productsLength: number
-  total: number
-}) => (
-  <View style={styles.headerTitleContainer}>
-    <Text style={styles.headerTitle}>Products</Text>
-    {total > 0 && (
-      <Text style={styles.headerCount}>
-        {productsLength} of {total}
-      </Text>
-    )}
-  </View>
-)
-
 export default function ProductListScreen() {
   const insets = useSafeAreaInsets()
 
@@ -102,7 +85,7 @@ export default function ProductListScreen() {
   // otherwise the input unmounts (and drops the keyboard) on every new search
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScreenHeader productsLength={products.length} total={total} />
+      <Text style={styles.title}>Discover</Text>
 
       <View style={styles.searchRow}>
         <SearchBar value={searchText} onChangeText={setSearchText} />
@@ -110,6 +93,12 @@ export default function ProductListScreen() {
       </View>
 
       <CategoryChips selected={category} onChange={setCategory} />
+
+      {total > 0 && (
+        <Text style={styles.resultCount}>
+          Showing {products.length} of {total}
+        </Text>
+      )}
 
       {isLoading ? (
         <ListSkeleton />
@@ -151,29 +140,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerTitleContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  headerTitle: {
-    fontSize: 24,
+  title: {
+    flexShrink: 0,
+    fontSize: 26,
     fontWeight: '700',
+    letterSpacing: -0.5,
     color: colors.textPrimary,
-  },
-  headerCount: {
-    fontSize: 13,
-    color: colors.textSecondary,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   searchRow: {
+    flexShrink: 0,
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     marginBottom: spacing.md,
+  },
+  resultCount: {
+    flexShrink: 0,
+    fontSize: 12,
+    color: colors.textMuted,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   listContent: {
     paddingHorizontal: spacing.lg,
