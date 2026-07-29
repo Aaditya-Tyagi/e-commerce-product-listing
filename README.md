@@ -63,6 +63,16 @@ Split by responsibility, with one rule per layer:
 - `hooks/` is the only place that knows caching and pagination
 - `components/` and `screens/` only know props and local UI state
 
+This is the right shape for one feature. On a production app I'd go
+feature-first instead — a `features/products/` folder owning its api, hooks,
+components and screens together, so everything that changes when products
+change sits in one place and a feature can be added or removed without touching
+the rest of the tree. Genuinely shared pieces — the back button, the skeleton
+primitive, the theme, the axios instance — would live in a `common/` or
+`shared/` folder outside any feature. Splitting by layer the way this project
+does starts to hurt once there are five features, because a single change then
+touches five folders that each contain four features' worth of unrelated code.
+
 Data flows one way. The screen holds what the user picked and passes it down as
 a single `filters` object; that object is also the React Query cache key, so
 changing search, category or sort produces a new cache entry and refetches on
