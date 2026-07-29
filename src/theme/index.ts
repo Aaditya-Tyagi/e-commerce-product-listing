@@ -22,6 +22,9 @@ export const spacing = {
   xl: 24,
 } as const
 
+// search field and sort button share this so they line up in the row
+export const CONTROL_HEIGHT = 44
+
 export const radius = {
   sm: 6,
   md: 12,

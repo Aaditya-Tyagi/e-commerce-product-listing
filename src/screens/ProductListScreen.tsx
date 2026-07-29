@@ -8,8 +8,11 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useProducts } from '../hooks/useproductData'
+import { useProducts, ProductFilters } from '../hooks/useProducts'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { SortButton } from '../components/SortButton'
+import { CategoryChips } from '../components/CategoryChips'
+import type { SortOrder } from '../api/products'
 import type { Product } from '../types/productResponse'
 import { ProductCard, CARD_HEIGHT, CARD_GAP } from '../components/ProductCard'
 import { ListSkeleton } from '../components/ListSkeleton'
@@ -42,7 +45,15 @@ export default function ProductListScreen() {
   const insets = useSafeAreaInsets()
 
   const [searchText, setSearchText] = useState('')
+  const [category, setCategory] = useState<string | undefined>()
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>()
   const debouncedSearch = useDebouncedValue(searchText, 400)
+
+  const filters: ProductFilters = {
+    searchString: debouncedSearch,
+    category,
+    ...(sortOrder ? { sortBy: 'price', order: sortOrder } : {}),
+  }
 
   const {
     products,
@@ -56,7 +67,7 @@ export default function ProductListScreen() {
     refresh,
     refetch,
     isRefetching,
-  } = useProducts(debouncedSearch)
+  } = useProducts(filters)
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<Product>) => <ProductCard product={item} />,
@@ -86,7 +97,13 @@ export default function ProductListScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScreenHeader productsLength={products.length} total={total} />
-      <SearchBar value={searchText} onChangeText={setSearchText} />
+
+      <View style={styles.searchRow}>
+        <SearchBar value={searchText} onChangeText={setSearchText} />
+        <SortButton order={sortOrder} onChange={setSortOrder} />
+      </View>
+
+      <CategoryChips selected={category} onChange={setCategory} />
 
       {isLoading ? (
         <ListSkeleton />
@@ -142,6 +159,13 @@ const styles = StyleSheet.create({
   headerCount: {
     fontSize: 13,
     color: colors.textSecondary,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   listContent: {
     paddingBottom: spacing.xl,

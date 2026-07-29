@@ -1,6 +1,6 @@
 import React from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
-import { colors, radius, spacing } from '../theme'
+import { colors, radius, spacing, CONTROL_HEIGHT } from '../theme'
 
 interface SearchBarProps {
   value: string
@@ -10,6 +10,7 @@ interface SearchBarProps {
 export function SearchBar({ value, onChangeText }: SearchBarProps) {
   return (
     <View style={styles.wrapper}>
+      <Text style={styles.icon}>⌕</Text>
       <TextInput
         style={styles.input}
         value={value}
@@ -31,21 +32,26 @@ export function SearchBar({ value, onChangeText }: SearchBarProps) {
 
 const styles = StyleSheet.create({
   wrapper: {
+    flex: 1,
+    height: CONTROL_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
+  },
+  icon: {
+    fontSize: 18,
+    color: colors.textMuted,
+    marginRight: spacing.xs,
   },
   input: {
     flex: 1,
+    padding: 0,
     fontSize: 15,
     color: colors.textPrimary,
-    paddingVertical: spacing.md,
   },
   clear: {
     fontSize: 14,

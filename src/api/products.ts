@@ -10,6 +10,7 @@ export interface GetProductsParams {
   limit?: number;
   skip?: number;
   searchString?: string;
+  category?: string;
   sortBy?: SortField;
   order?: SortOrder;
 }
@@ -18,11 +19,19 @@ export const getProducts = async ({
   limit = PAGE_SIZE,
   skip = 0,
   searchString = '',
+  category,
   sortBy,
   order = 'asc',
 }: GetProductsParams = {}): Promise<ProductsResponse> => {
   const trimmedSearch = searchString.trim();
-  const path = trimmedSearch ? '/products/search' : '/products';
+
+  // search and category are separate endpoints on dummyjson, so they can't
+  // combine — search takes priority when both are set
+  const path = trimmedSearch
+    ? '/products/search'
+    : category
+      ? `/products/category/${category}`
+      : '/products';
 
   const response = await axiosInstance.get(path, {
     params: {
