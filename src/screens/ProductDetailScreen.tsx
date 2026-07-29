@@ -1,8 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   Dimensions,
-  FlatList,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,16 +10,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { RootStackParamList } from '../navigation/types'
-import type { Product, ProductReview } from '../types/productResponse'
 import { useProduct } from '../hooks/useProduct'
+import { BackButton } from '../components/BackButton'
 import { ErrorState } from '../components/ListStates'
-import { Skeleton } from '../components/Skeleton'
+import { InfoCard } from '../components/InfoCard'
+import { ProductDetailSkeleton } from '../components/ProductDetailSkeleton'
+import { ProductGallery } from '../components/ProductGallery'
+import { ProductSpecs } from '../components/ProductSpecs'
+import { ReviewCard } from '../components/ReviewCard'
+import { Stars } from '../components/Stars'
 import { colors, radius, spacing } from '../theme'
 import { formatPrice, originalPrice } from '../utils/format'
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
-const GALLERY_HEIGHT = SCREEN_HEIGHT * 0.42
-const CARD_W = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2
+const SCREEN_HEIGHT = Dimensions.get('window').height
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetail'>
 
@@ -30,54 +31,17 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets()
   const { product, isLoading, isError, error, refetch } = useProduct(productId)
 
-  const back = (
-    <Pressable
-      style={[styles.backButton, { top: insets.top + spacing.sm }]}
-      onPress={navigation.goBack}
-      accessibilityRole="button"
-      accessibilityLabel="Go back"
-    >
-      <View style={styles.backChevron} />
-    </Pressable>
-  )
-
-  // opening from the grid seeds the cache first, so this only shows on a cold
-  // open such as a deep link
+  // opening from the grid seeds the cache first, so these only show on a cold
+  // open with nothing cached
   if (isLoading || !product) {
-    if (isError) {
-      return (
-        <View style={styles.container}>
-          <ErrorState message={error?.message} onRetry={() => refetch()} />
-          {back}
-        </View>
-      )
-    }
     return (
       <View style={styles.container}>
-        <Skeleton
-          width="100%"
-          height={GALLERY_HEIGHT + insets.top}
-          borderRadius={0}
-        />
-        <View style={styles.loadingBody}>
-          <Skeleton width="75%" height={22} />
-          <Skeleton width="40%" height={14} style={styles.loadingGap} />
-          <Skeleton width="35%" height={30} style={styles.loadingGapLarge} />
-          <Skeleton
-            width={140}
-            height={26}
-            borderRadius={radius.pill}
-            style={styles.loadingGap}
-          />
-          <Skeleton width="90%" height={13} style={styles.loadingGapLarge} />
-          <Skeleton width="95%" height={13} style={styles.loadingGap} />
-          <Skeleton width="60%" height={13} style={styles.loadingGap} />
-          <View style={styles.loadingCards}>
-            <Skeleton width={CARD_W} height={68} borderRadius={radius.md} />
-            <Skeleton width={CARD_W} height={68} borderRadius={radius.md} />
-          </View>
-        </View>
-        {back}
+        {isError ? (
+          <ErrorState message={error?.message} onRetry={() => refetch()} />
+        ) : (
+          <ProductDetailSkeleton />
+        )}
+        <BackButton onPress={navigation.goBack} />
       </View>
     )
   }
@@ -92,7 +56,7 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
         bounces={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Gallery images={product.images} fallback={product.thumbnail} />
+        <ProductGallery images={product.images} fallback={product.thumbnail} />
 
         <View style={styles.body}>
           <Text style={styles.title}>{product.title}</Text>
@@ -143,8 +107,16 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
           <Text style={styles.description}>{product.description}</Text>
 
           <View style={styles.infoGrid}>
-            <InfoCard icon="🚚" label="Shipping" value={product.shippingInformation} />
-            <InfoCard icon="🛡️" label="Warranty" value={product.warrantyInformation} />
+            <InfoCard
+              icon="🚚"
+              label="Shipping"
+              value={product.shippingInformation}
+            />
+            <InfoCard
+              icon="🛡️"
+              label="Warranty"
+              value={product.warrantyInformation}
+            />
             <InfoCard icon="↩️" label="Returns" value={product.returnPolicy} />
             <InfoCard
               icon="📦"
@@ -153,7 +125,7 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
             />
           </View>
 
-          <Specs product={product} />
+          <ProductSpecs product={product} />
 
           {product.reviews.length > 0 && (
             <>
@@ -161,16 +133,21 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
                 Reviews ({product.reviews.length})
               </Text>
               {product.reviews.map((review, i) => (
-                <ReviewCard key={`${review.reviewerEmail}-${i}`} review={review} />
+                <ReviewCard
+                  key={`${review.reviewerEmail}-${i}`}
+                  review={review}
+                />
               ))}
             </>
           )}
         </View>
       </ScrollView>
 
-      {back}
+      <BackButton onPress={navigation.goBack} />
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}>
+      <View
+        style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}
+      >
         <View>
           <Text style={styles.bottomLabel}>Total price</Text>
           <Text style={styles.bottomPrice}>{formatPrice(product.price)}</Text>
@@ -188,130 +165,6 @@ export default function ProductDetailScreen({ route, navigation }: Props) {
   )
 }
 
-function Stars({ rating }: { rating: number }) {
-  const filled = Math.round(rating)
-  return (
-    <View style={styles.starRow}>
-      <Text style={styles.stars}>
-        {'★'.repeat(filled)}
-        <Text style={styles.starsEmpty}>{'★'.repeat(5 - filled)}</Text>
-      </Text>
-      <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
-    </View>
-  )
-}
-
-function Gallery({ images, fallback }: { images: string[]; fallback: string }) {
-  const data = images.length > 0 ? images : [fallback]
-  const [index, setIndex] = useState(0)
-  const insets = useSafeAreaInsets()
-
-  // the status bar sits over the gallery, so the image is padded down out of
-  // it rather than being clipped
-  const height = GALLERY_HEIGHT + insets.top
-
-  return (
-    <View style={[styles.gallery, { height }]}>
-      <FlatList
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        data={data}
-        keyExtractor={(uri, i) => `${uri}-${i}`}
-        onMomentumScrollEnd={e =>
-          setIndex(Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH))
-        }
-        renderItem={({ item }) => (
-          <View style={[styles.slide, { height, paddingTop: insets.top }]}>
-            <Image
-              source={{ uri: item }}
-              style={styles.image}
-              resizeMode="contain"
-            />
-          </View>
-        )}
-      />
-
-      {data.length > 1 && (
-        <View style={styles.dots}>
-            {data.map((uri, i) => (
-              <View
-                key={`${uri}-${i}`}
-                style={[styles.dot, i === index && styles.dotActive]}
-              />
-          ))}
-        </View>
-      )}
-    </View>
-  )
-}
-
-function InfoCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: string
-  label: string
-  value: string
-}) {
-  return (
-    <View style={styles.infoCard}>
-      <View style={styles.infoHead}>
-        <Text style={styles.infoIcon}>{icon}</Text>
-        <Text style={styles.infoLabel}>{label}</Text>
-      </View>
-      <Text style={styles.infoValue} numberOfLines={2}>
-        {value}
-      </Text>
-    </View>
-  )
-}
-
-function Specs({ product }: { product: Product }) {
-  const { width, height, depth } = product.dimensions
-  const rows = [
-    ['Category', product.category],
-    ['SKU', product.sku],
-    ['Weight', `${product.weight} kg`],
-    ['Dimensions', `${width} × ${height} × ${depth} cm`],
-  ]
-
-  return (
-    <View style={styles.specs}>
-      {rows.map(([label, value]) => (
-        <View key={label} style={styles.specRow}>
-          <Text style={styles.specLabel}>{label}</Text>
-          <Text style={styles.specValue}>{value}</Text>
-        </View>
-      ))}
-    </View>
-  )
-}
-
-function ReviewCard({ review }: { review: ProductReview }) {
-  const initials = review.reviewerName
-    .split(' ')
-    .map(part => part[0])
-    .join('')
-    .slice(0, 2)
-
-  return (
-    <View style={styles.reviewCard}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-      <View style={styles.reviewBody}>
-        <View style={styles.reviewHead}>
-          <Text style={styles.reviewer}>{review.reviewerName}</Text>
-          <Text style={styles.reviewRating}>★ {review.rating}</Text>
-        </View>
-        <Text style={styles.reviewComment}>{review.comment}</Text>
-      </View>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -320,82 +173,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.xl,
   },
-  loadingBody: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
-    padding: spacing.lg,
-    flex: 1,
-  },
-  loadingGap: {
-    marginTop: spacing.md,
-  },
-  loadingGapLarge: {
-    marginTop: spacing.lg,
-  },
-  loadingCards: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  backButton: {
-    position: 'absolute',
-    left: spacing.lg,
-    width: 40,
-    height: 40,
-    borderRadius: radius.pill,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  // drawn rather than a text glyph, whose side bearings never centre cleanly
-  backChevron: {
-    width: 11,
-    height: 11,
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: colors.textPrimary,
-    transform: [{ rotate: '45deg' }],
-    marginLeft: 5,
-  },
-
-  gallery: {},
-  slide: {
-    width: SCREEN_WIDTH,
-    backgroundColor: colors.imageTile,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  image: {
-    width: '92%',
-    height: '92%',
-  },
-  dots: {
-    position: 'absolute',
-    bottom: spacing.xl + spacing.lg,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: radius.pill,
-    backgroundColor: colors.border,
-  },
-  dotActive: {
-    width: 18,
-    backgroundColor: colors.accent,
-  },
-
   body: {
     backgroundColor: colors.card,
     borderTopLeftRadius: 24,
@@ -423,33 +200,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textSecondary,
   },
-  starRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.ratingBg,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
-  stars: {
-    fontSize: 11,
-    color: colors.ratingText,
-    letterSpacing: 1,
-  },
-  starsEmpty: {
-    color: colors.border,
-  },
-  ratingValue: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.ratingText,
-  },
   reviewCount: {
     fontSize: 12,
     color: colors.textMuted,
   },
-
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -478,7 +232,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.discountText,
   },
-
   stockPill: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -510,7 +263,6 @@ const styles = StyleSheet.create({
   stockTextOut: {
     color: colors.textMuted,
   },
-
   tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -528,7 +280,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textTransform: 'capitalize',
   },
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -541,112 +292,12 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: colors.textSecondary,
   },
-
   infoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
     marginTop: spacing.lg,
   },
-  infoCard: {
-    width: (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  infoHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  infoIcon: {
-    fontSize: 14,
-  },
-  infoLabel: {
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  infoValue: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginTop: 2,
-  },
-
-  specs: {
-    marginTop: spacing.lg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  specRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  specLabel: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  specValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    textTransform: 'capitalize',
-  },
-
-  reviewCard: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.onFill,
-  },
-  reviewBody: {
-    flex: 1,
-  },
-  reviewHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reviewer: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  reviewRating: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.ratingText,
-  },
-  reviewComment: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
